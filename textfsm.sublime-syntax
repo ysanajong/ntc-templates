@@ -1,0 +1,135 @@
+%YAML 1.2
+---
+# See http://www.sublimetext.com/docs/3/syntax.html
+name: TextFSM
+file_extensions: [textfsm]
+scope: source.textfsm
+contexts:
+  main:
+    # TextFSM Begins be defining Named Capture Groups, called Values
+    - match: "^Value"
+      scope: keyword.declaration.textfsm
+      push: value_definition
+
+    # TextFSM begins matching on the Start keyword
+    - match: "^Start"
+      scope: keyword.control.loop.repeat-until.textfsm
+      push: fsm_matching
+
+    # Strings begin and end with quotes, and use backslashes as an escape
+    # character
+    - match: "\""
+      scope: punctuation.definition.string.begin.textfsm
+      push: double_quoted_string
+
+    - match: "\""
+      scope: punctuation.definition.string.begin.textfsm
+      push: single_quoted_string
+
+    # Comments begin with a "#" and finish at the end of the line
+    - match: "#"
+      scope: punctuation.definition.comment.begin.textfsm
+      push: line_comment
+
+  value_definition:
+    - meta_scope: meta.group.textfsm
+    - match: "\\b(Filldown|Fillup|List|Required)\\b"
+      scope: keyword.operator.textfsm
+    - match: "\\("
+      scope: punctuation.section.parens.begin.textfsm
+      set: regex_definition
+    - match: "\\S+"
+      scope: entity.name.textfsm
+    - match: "\\."
+      scope: constant.character.escape.textfsm
+    - match: "$"
+      pop: true
+
+  regex_definition:
+    - match: "#"
+      scope: punctuation.definition.comment.begin.textfsm
+      push: line_comment
+    - match: "\\)"
+      scope: punctuation.section.parens.end.textfsm
+    - match: "\\S"
+      scope: string.regexp.textfsm
+    - match: "$"
+      pop: true
+
+  fsm_matching:
+    - match: "\\s+\\^"
+      scope: string.regexp.textfsm
+      push: regex_matching
+    - match: "^EOF"
+      scope: keyword.control.loop.end.textfsm
+    - match: "^\\S+"
+      scope: keyword.control.loop.repeat-until.textfsm
+    - match: "#"
+      scope: punctuation.definition.comment.begin.textfsm
+      push: line_comment
+
+  regex_matching:
+    - meta_scope: string.regexp.textfsm
+    - match: "\\${"
+      scope: punctuation.accessor.textfsm
+      push: variable_use
+    - match: "\\$(?=\\$)"
+      scope: constant.character.escape.textfsm
+    - match: "#"
+      scope: punctuation.definition.comment.begin.textfsm
+      push: line_comment
+    - match: "->"
+      scope: punctuation.accessor.fat-arrow.textfsm
+      push: control_matching
+    - match: "$"
+      pop: true
+
+  variable_use:
+    - meta_content_scope: variable.parameter.textfsm
+    - match: "}"
+      scope: punctuation.terminator.textfsm
+      pop: true
+
+  control_matching:
+    - clear_scopes: true
+    - match: "(Continue|Next)"
+      scope: keyword.control.flow.continue.textfsm
+    - match: "Record"
+      scope: keyword.control.flow.return.textfsm
+    - match: "Error"
+      scope: keyword.control.exception.end.textfsm
+    - match: "\""
+      scope: punctuation.definition.string.begin.textfsm
+      push: double_quoted_string
+    - match: "\""
+      scope: punctuation.definition.string.begin.textfsm
+      push: single_quoted_string
+    - match: "#"
+      scope: punctuation.definition.comment.begin.textfsm
+      push: line_comment
+    - match: "\\S+"
+      scope: keyword.control.flow.goto.textfsm
+    - match: "$"
+      pop: true
+
+  double_quoted_string:
+    - meta_scope: string.quoted.double.textfsm
+    - match: '\\.'
+      scope: constant.character.escape.textfsm
+    - match: '"'
+      scope: punctuation.definition.string.end.textfsm
+      pop: true
+
+  single_quoted_string:
+    - meta_scope: string.quoted.single.textfsm
+    - match: "\\."
+      scope: constant.character.escape.textfsm
+    - match: "'"
+      scope: punctuation.definition.string.end.textfsm
+      pop: true
+
+  line_comment:
+    - match: "(.+)"
+      scope: comment.line.number-sign.textfsm
+    - match: $
+      pop: true
